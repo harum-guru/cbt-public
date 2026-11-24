@@ -8,17 +8,16 @@ const FIREBASE_JWKS = createRemoteJWKSet(
 
 const PROJECT_ID = firebaseConfig.projectId;
 
-// Ephemeral fallback if EXAM_SEAL_SECRET is not configured in env
-const globalForSecret = globalThis as unknown as { __ujiankuSealSecret?: Buffer };
+// Deterministic fallback across serverless/edge isolates if EXAM_SEAL_SECRET is not configured in env
 function getSealKey(): Buffer {
   const envSecret = process.env.EXAM_SEAL_SECRET;
   if (envSecret && envSecret.trim().length > 0) {
     return crypto.createHash('sha256').update(envSecret.trim()).digest();
   }
-  if (!globalForSecret.__ujiankuSealSecret) {
-    globalForSecret.__ujiankuSealSecret = crypto.randomBytes(32);
-  }
-  return globalForSecret.__ujiankuSealSecret;
+  return crypto
+    .createHash('sha256')
+    .update(`ujianku-seal:${firebaseConfig.projectId}:${firebaseConfig.appId}`)
+    .digest();
 }
 
 export interface VerifiedFirebaseToken {
