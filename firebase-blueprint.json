@@ -1,0 +1,357 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Pengguna aplikasi (Admin, Guru, atau Siswa) beserta peran dan status akun.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "role": { "type": "string", "enum": ["admin", "teacher", "student"] },
+        "status": { "type": "string", "enum": ["active", "pending_approval", "suspended"] },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "studentNumber": { "type": "string", "maxLength": 40 },
+        "schoolName": { "type": "string", "maxLength": 150 },
+        "timezone": { "type": "string", "enum": ["WIB", "WITA", "WIT"] },
+        "approvedBy": { "type": "string", "maxLength": 128 },
+        "approvedAt": { "type": "string", "format": "date-time" },
+        "suspendedReason": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "lastLoginAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "role", "status", "displayName", "email", "createdAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Penanda akun admin yang aktif di platform.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "addedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "displayName", "createdAt"]
+    },
+    "PlatformSettings": {
+      "title": "PlatformSettings",
+      "description": "Pengaturan global platform UjianKu yang dikelola oleh admin.",
+      "type": "object",
+      "properties": {
+        "requireTeacherApproval": { "type": "boolean" },
+        "studentRegistrationOpen": { "type": "boolean" },
+        "maxUploadSizeMB": { "type": "number" },
+        "defaultTimezone": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "updatedBy": { "type": "string", "maxLength": 128 }
+      },
+      "required": ["requireTeacherApproval", "studentRegistrationOpen", "maxUploadSizeMB", "defaultTimezone"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Catatan audit tindakan admin yang bersifat append-only.",
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "actorEmail": { "type": "string", "maxLength": 200 },
+        "action": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "targetType": { "type": "string", "enum": ["user", "class", "exam", "settings"] },
+        "targetId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "reason": { "type": "string", "maxLength": 500 },
+        "meta": { "type": "object" },
+        "at": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorId", "actorEmail", "action", "targetType", "targetId", "at"]
+    },
+    "ClassRoom": {
+      "title": "ClassRoom",
+      "description": "Kelas yang dibuat guru dengan kode gabung unik 6 karakter.",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "teacherName": { "type": "string", "maxLength": 120 },
+        "schoolName": { "type": "string", "maxLength": 150 },
+        "name": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 500 },
+        "joinCode": { "type": "string", "minLength": 6, "maxLength": 6, "pattern": "^[A-Z0-9]{6}$" },
+        "isArchived": { "type": "boolean" },
+        "memberCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "name", "joinCode", "isArchived", "memberCount", "createdAt"]
+    },
+    "ClassCode": {
+      "title": "ClassCode",
+      "description": "Peta kode gabung 6 karakter ke ID kelas untuk pencarian oleh siswa.",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "teacherId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "teacherName": { "type": "string", "maxLength": 120 },
+        "schoolName": { "type": "string", "maxLength": 150 },
+        "className": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "isArchived": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["classId", "teacherId", "className", "isArchived", "createdAt"]
+    },
+    "ClassMember": {
+      "title": "ClassMember",
+      "description": "Keanggotaan siswa di dalam kelas.",
+      "type": "object",
+      "properties": {
+        "studentUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "studentNumber": { "type": "string", "maxLength": 40 },
+        "joinCode": { "type": "string", "minLength": 6, "maxLength": 6 },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentUid", "displayName", "joinCode", "joinedAt"]
+    },
+    "StudentEnrollment": {
+      "title": "StudentEnrollment",
+      "description": "Indeks keanggotaan kelas milik siswa untuk daftar kelas dan ujian cepat.",
+      "type": "object",
+      "properties": {
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "className": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "teacherId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "teacherName": { "type": "string", "maxLength": 120 },
+        "schoolName": { "type": "string", "maxLength": 150 },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["classId", "className", "teacherId", "joinedAt"]
+    },
+    "ClassExamRef": {
+      "title": "ClassExamRef",
+      "description": "Referensi ujian yang ditujukan ke sebuah kelas agar siswa dapat melihat daftar ujiannya.",
+      "type": "object",
+      "properties": {
+        "examId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "teacherId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "subject": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "status": { "type": "string", "enum": ["draft", "published", "closed", "archived"] },
+        "opensAt": { "type": "string", "format": "date-time" },
+        "closesAt": { "type": "string", "format": "date-time" },
+        "timezone": { "type": "string", "enum": ["WIB", "WITA", "WIT"] },
+        "durationMinutes": { "type": "number" },
+        "questionCount": { "type": "number" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["examId", "teacherId", "title", "subject", "status", "opensAt", "closesAt", "durationMinutes"]
+    },
+    "Exam": {
+      "title": "Exam",
+      "description": "Definisi ujian pilihan ganda beserta jadwal, durasi, aturan pengacakan, dan pengawasan.",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "teacherName": { "type": "string", "maxLength": 120 },
+        "schoolName": { "type": "string", "maxLength": 150 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "description": { "type": "string", "maxLength": 2000 },
+        "subject": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "classIds": { "type": "array" },
+        "status": { "type": "string", "enum": ["draft", "published", "closed", "archived"] },
+        "settings": { "type": "object" },
+        "totalPoints": { "type": "number" },
+        "questionCount": { "type": "number" },
+        "attemptCount": { "type": "number" },
+        "resultsReleased": { "type": "boolean" },
+        "sealedKeyToken": { "type": "string", "maxLength": 50000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "title", "subject", "classIds", "status", "settings", "totalPoints", "questionCount", "resultsReleased", "createdAt", "updatedAt"]
+    },
+    "ExamQuestion": {
+      "title": "ExamQuestion",
+      "description": "Konten soal pilihan ganda tanpa kunci jawaban (aman dibaca siswa saat ujian berlangsung).",
+      "type": "object",
+      "properties": {
+        "order": { "type": "number" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 5000 },
+        "imageURL": { "type": "string", "maxLength": 1000 },
+        "options": { "type": "array" },
+        "points": { "type": "number" },
+        "voided": { "type": "string", "enum": ["none", "all_correct", "excluded"] }
+      },
+      "required": ["order", "text", "options", "points"]
+    },
+    "AnswerKey": {
+      "title": "AnswerKey",
+      "description": "Kunci jawaban dan pembahasan per soal; terisolasi dari siswa selama pengerjaan.",
+      "type": "object",
+      "properties": {
+        "correctOptionId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "explanation": { "type": "string", "maxLength": 3000 }
+      },
+      "required": ["correctOptionId"]
+    },
+    "ExamAttempt": {
+      "title": "ExamAttempt",
+      "description": "Sesi pengerjaan ujian oleh siswa termasuk jawaban, timer, progres, dan skor.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentName": { "type": "string", "maxLength": 120 },
+        "studentNumber": { "type": "string", "maxLength": 40 },
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "attemptNumber": { "type": "number" },
+        "status": { "type": "string", "enum": ["in_progress", "submitted"] },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "submittedAt": { "type": "string", "format": "date-time" },
+        "questionOrder": { "type": "array" },
+        "optionOrder": { "type": "object" },
+        "answers": { "type": "object" },
+        "answeredCount": { "type": "number" },
+        "violations": { "type": "number" },
+        "presence": { "type": "string", "enum": ["online", "disconnected"] },
+        "lastHeartbeatAt": { "type": "string", "format": "date-time" },
+        "flaggedForReview": { "type": "boolean" },
+        "score": { "type": "number" },
+        "maxScore": { "type": "number" },
+        "percentage": { "type": "number" },
+        "passed": { "type": "boolean" },
+        "correctCount": { "type": "number" },
+        "resultReleased": { "type": "boolean" },
+        "gradedAt": { "type": "string", "format": "date-time" },
+        "teacherNote": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["studentId", "classId", "attemptNumber", "status", "startedAt", "deadline", "questionOrder", "optionOrder", "answers", "answeredCount", "violations", "presence", "lastHeartbeatAt", "flaggedForReview", "resultReleased"]
+    },
+    "AttemptEvent": {
+      "title": "AttemptEvent",
+      "description": "Log aktivitas pengawasan ujian yang bersifat append-only.",
+      "type": "object",
+      "properties": {
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "type": {
+          "type": "string",
+          "enum": [
+            "tab_hidden",
+            "tab_visible",
+            "window_blur",
+            "window_focus",
+            "fullscreen_exit",
+            "page_unload",
+            "disconnected",
+            "reconnected",
+            "copy_attempt",
+            "paste_attempt",
+            "teacher_action"
+          ]
+        },
+        "at": { "type": "string", "format": "date-time" },
+        "durationAwayMs": { "type": "number" },
+        "meta": { "type": "object" }
+      },
+      "required": ["studentId", "type", "at"]
+    },
+    "QuestionBankItem": {
+      "title": "QuestionBankItem",
+      "description": "Bank soal pribadi guru untuk digunakan ulang di berbagai ujian.",
+      "type": "object",
+      "properties": {
+        "teacherId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "subject": { "type": "string", "maxLength": 100 },
+        "text": { "type": "string", "minLength": 1, "maxLength": 5000 },
+        "imageURL": { "type": "string", "maxLength": 1000 },
+        "options": { "type": "array" },
+        "correctOptionId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "explanation": { "type": "string", "maxLength": 3000 },
+        "points": { "type": "number" },
+        "tags": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["teacherId", "text", "options", "correctOptionId", "points", "createdAt"]
+    },
+    "NotificationItem": {
+      "title": "NotificationItem",
+      "description": "Notifikasi in-app untuk guru dan siswa.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "title": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "body": { "type": "string", "minLength": 1, "maxLength": 400 },
+        "href": { "type": "string", "maxLength": 300 },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "body", "read", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Profil pengguna beserta peran dan status akun."
+    },
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Daftar UID admin resmi yang diakui oleh Security Rules."
+    },
+    "/platformSettings/{settingId}": {
+      "schema": { "$ref": "#/entities/PlatformSettings" },
+      "description": "Pengaturan global platform."
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Log audit tindakan admin."
+    },
+    "/classes/{classId}": {
+      "schema": { "$ref": "#/entities/ClassRoom" },
+      "description": "Data kelas milik guru."
+    },
+    "/classCodes/{joinCode}": {
+      "schema": { "$ref": "#/entities/ClassCode" },
+      "description": "Indeks lookup kode gabung kelas."
+    },
+    "/classes/{classId}/members/{studentUid}": {
+      "schema": { "$ref": "#/entities/ClassMember" },
+      "description": "Daftar siswa anggota kelas."
+    },
+    "/classes/{classId}/examRefs/{examId}": {
+      "schema": { "$ref": "#/entities/ClassExamRef" },
+      "description": "Daftar ujian yang ditautkan ke kelas."
+    },
+    "/users/{uid}/enrollments/{classId}": {
+      "schema": { "$ref": "#/entities/StudentEnrollment" },
+      "description": "Indeks kelas yang diikuti siswa."
+    },
+    "/exams/{examId}": {
+      "schema": { "$ref": "#/entities/Exam" },
+      "description": "Dokumen utama ujian."
+    },
+    "/exams/{examId}/questions/{questionId}": {
+      "schema": { "$ref": "#/entities/ExamQuestion" },
+      "description": "Soal ujian tanpa kunci jawaban."
+    },
+    "/exams/{examId}/answerKeys/{questionId}": {
+      "schema": { "$ref": "#/entities/AnswerKey" },
+      "description": "Kunci jawaban terisolasi."
+    },
+    "/exams/{examId}/attempts/{attemptId}": {
+      "schema": { "$ref": "#/entities/ExamAttempt" },
+      "description": "Percobaan pengerjaan ujian siswa."
+    },
+    "/exams/{examId}/attempts/{attemptId}/events/{eventId}": {
+      "schema": { "$ref": "#/entities/AttemptEvent" },
+      "description": "Log event pengawasan ujian."
+    },
+    "/questionBank/{questionId}": {
+      "schema": { "$ref": "#/entities/QuestionBankItem" },
+      "description": "Bank soal pribadi guru."
+    },
+    "/notifications/{userId}/items/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationItem" },
+      "description": "Notifikasi pengguna."
+    }
+  }
+}
